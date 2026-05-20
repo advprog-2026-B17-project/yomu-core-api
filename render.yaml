@@ -6,19 +6,23 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /actuator/health
     envVars:
-      - key: JAVA_OPTS
-        value: "-Xmx384m"
       - key: JWT_SECRET
         sync: false
-      - key: CLOUDAMQP_URL
+      - key: GATEWAY_SHARED_SECRET
         sync: false
-      - key: DB_HOST
-        sync: false
-      - key: DB_PORT
-        value: "5432"
-      - key: DB_NAME
+      - key: DATABASE_JDBC_URL
         sync: false
       - key: DB_USER
         sync: false
       - key: DB_PASSWORD
+        sync: false
+      - key: RABBITMQ_HOST
+        sync: false
+      - key: RABBITMQ_PORT
+        value: "5672"
+      - key: RABBITMQ_USERNAME
+        sync: false
+      - key: RABBITMQ_PASSWORD
+        sync: false
+      - key: RABBITMQ_VHOST
         sync: false
