@@ -2,6 +2,7 @@ package com.yomu.core.repository;
 
 import com.yomu.core.entity.ClanMember;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,5 +15,8 @@ public interface ClanMemberRepository extends JpaRepository<ClanMember, UUID> {
     List<ClanMember> findByUserId(UUID userId);
     Optional<ClanMember> findByClanIdAndUserId(UUID clanId, UUID userId);
     boolean existsByClanIdAndUserId(UUID clanId, UUID userId);
+    boolean existsByUserId(UUID userId);
+    @Transactional
+    void deleteByClanId(UUID clanId);
     void deleteByClanIdAndUserId(UUID clanId, UUID userId);
 }

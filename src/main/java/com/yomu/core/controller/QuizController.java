@@ -2,11 +2,12 @@ package com.yomu.core.controller;
 
 import com.yomu.core.dto.QuizResult;
 import com.yomu.core.dto.QuizSubmission;
-import com.yomu.core.entity.Question;
+import com.yomu.core.dto.QuestionDTO;
 import com.yomu.core.entity.Reading;
 import com.yomu.core.service.QuizService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,8 +38,8 @@ public class QuizController {
     }
 
     @GetMapping("/{id}/questions")
-    public ResponseEntity<List<Question>> getQuestions(@PathVariable UUID id) {
-        return ResponseEntity.ok(quizService.getQuestionsForReading(id));
+    public ResponseEntity<List<QuestionDTO>> getQuestions(@PathVariable UUID id) {
+        return ResponseEntity.ok(quizService.getQuestionDTOsForReading(id));
     }
 
     @PostMapping("/{id}/submit")
@@ -72,6 +73,7 @@ public class QuizController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Reading> createReading(@RequestBody Map<String, String> body, Authentication auth) {
         Reading reading = new Reading();
         reading.setTitle(body.get("title"));
@@ -82,6 +84,7 @@ public class QuizController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteReading(@PathVariable UUID id, Authentication auth) {
         quizService.deleteReading(id);
         return ResponseEntity.ok().build();

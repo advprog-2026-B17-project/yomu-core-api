@@ -2,6 +2,7 @@ package com.yomu.core.service;
 
 import com.yomu.core.dto.QuizResult;
 import com.yomu.core.dto.QuizSubmission;
+import com.yomu.core.dto.QuestionDTO;
 import com.yomu.core.entity.Category;
 import com.yomu.core.entity.CompletedReading;
 import com.yomu.core.entity.Question;
@@ -50,6 +51,16 @@ public class QuizService {
 
     public List<Question> getQuestionsForReading(UUID readingId) {
         return questionRepository.findByReadingId(readingId);
+    }
+
+    public List<QuestionDTO> getQuestionDTOsForReading(UUID readingId) {
+        return questionRepository.findByReadingId(readingId).stream()
+                .map(question -> new QuestionDTO(
+                        question.getId(),
+                        question.getQuestionText(),
+                        question.getOptions()
+                ))
+                .toList();
     }
 
     @Transactional
@@ -109,6 +120,9 @@ public class QuizService {
 
     @Transactional
     public void markReadingComplete(UUID userId, UUID readingId) {
+        if (!quizAttemptRepository.existsByUserIdAndReadingId(userId, readingId)) {
+            throw new RuntimeException("Submit the quiz before completing this reading");
+        }
         if (!completedReadingRepository.existsByUserIdAndReadingId(userId, readingId)) {
             CompletedReading completed = new CompletedReading();
             completed.setUserId(userId);
@@ -124,9 +138,12 @@ public class QuizService {
     @Transactional
     public Reading saveReading(Reading reading, String categoryName) {
         if (categoryName != null && !categoryName.isBlank()) {
-            Category cat = new Category();
-            cat.setName(categoryName);
-            cat = categoryRepository.save(cat);
+            Category cat = categoryRepository.findByName(categoryName)
+                    .orElseGet(() -> {
+                        Category newCategory = new Category();
+                        newCategory.setName(categoryName);
+                        return categoryRepository.save(newCategory);
+                    });
             reading.setCategory(cat);
         }
         return readingRepository.save(reading);
