@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: yomu-core-api
+    env: docker
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: JAVA_OPTS
+        value: "-Xmx384m"
+      - key: JWT_SECRET
+        sync: false
+      - key: CLOUDAMQP_URL
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "5432"
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
