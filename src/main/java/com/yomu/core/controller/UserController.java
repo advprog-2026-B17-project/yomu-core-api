@@ -30,8 +30,10 @@ public class UserController {
     }
 
     @GetMapping("/{id}/profile")
-    public ResponseEntity<UserProfileDTO> getUserProfile(@PathVariable UUID id) {
-        return ResponseEntity.ok(userService.getUserProfile(id));
+    public ResponseEntity<UserProfileDTO> getUserProfile(@PathVariable UUID id, Authentication authentication) {
+        UUID requestingUserId = UUID.fromString((String) authentication.getPrincipal());
+        boolean includeHiddenAchievements = id.equals(requestingUserId) || isAdmin(authentication);
+        return ResponseEntity.ok(userService.getUserProfile(id, includeHiddenAchievements));
     }
 
     @PutMapping("/{id}")
@@ -41,13 +43,30 @@ public class UserController {
             Authentication authentication) {
         UUID requestingUserId = UUID.fromString((String) authentication.getPrincipal());
 
-        // Users can only update their own profile (or admins)
-        if (!id.equals(requestingUserId) && !"admin".equals(requestingUserId.toString())) {
+        if (!id.equals(requestingUserId) && !isAdmin(authentication)) {
             return ResponseEntity.status(403).build();
         }
 
         return userService.updateUser(id, request)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID id, Authentication authentication) {
+        UUID requestingUserId = UUID.fromString((String) authentication.getPrincipal());
+
+        if (!id.equals(requestingUserId) && !isAdmin(authentication)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        return userService.deleteUser(id)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
+    }
+
+    private boolean isAdmin(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
     }
 }

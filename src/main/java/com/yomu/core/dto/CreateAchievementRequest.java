@@ -1,36 +1,24 @@
-package com.yomu.core.entity;
+package com.yomu.core.dto;
 
-import jakarta.persistence.*;
-import java.time.OffsetDateTime;
-import java.util.UUID;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
-@Entity
-@Table(name = "achievements", schema = "gamification")
-public class Achievement {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
-
-    @Column(nullable = false, length = 100)
+public class CreateAchievementRequest {
+    @NotBlank
+    @Size(max = 100)
     private String name;
 
-    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(nullable = false)
+    @NotNull
+    @Min(1)
     private Integer milestone;
 
-    @Column(name = "achievement_type", length = 50)
     private String achievementType = "reading_count";
-
-    @Column(name = "icon_url")
     private String iconUrl;
 
-    @Column(name = "created_at")
-    private OffsetDateTime createdAt = OffsetDateTime.now();
-
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     public String getDescription() { return description; }
@@ -41,6 +29,4 @@ public class Achievement {
     public void setAchievementType(String achievementType) { this.achievementType = achievementType; }
     public String getIconUrl() { return iconUrl; }
     public void setIconUrl(String iconUrl) { this.iconUrl = iconUrl; }
-    public OffsetDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
 }
