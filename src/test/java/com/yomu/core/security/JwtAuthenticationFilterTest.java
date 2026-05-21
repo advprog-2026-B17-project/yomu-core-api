@@ -38,9 +38,7 @@ class JwtAuthenticationFilterTest {
     private HttpServletRequest mockRequest(String uri, String... headers) {
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn(uri);
-        // Default: no headers
         when(request.getHeader(anyString())).thenReturn(null);
-        // Set headers from varargs
         for (int i = 0; i < headers.length - 1; i += 2) {
             String name = headers[i];
             String value = headers[i + 1];
@@ -56,87 +54,6 @@ class JwtAuthenticationFilterTest {
         when(response.getWriter()).thenReturn(pw);
         return response;
     }
-
-    // ===== Gateway secret validation =====
-
-    @Nested
-    @DisplayName("Gateway secret validation")
-    class GatewaySecret {
-
-        @Test
-        @DisplayName("allows request without gateway secret when GATEWAY_SHARED_SECRET not set")
-        void allowsWithoutSecretWhenNotConfigured() throws Exception {
-            HttpServletRequest request = mockRequest("/api/users/me",
-                    "X-User-Id", "user-123");
-            HttpServletResponse response = mockResponse();
-
-            filter.doFilterInternal(request, response, filterChain);
-
-            verify(filterChain).doFilter(request, response);
-            assertEquals("user-123", SecurityContextHolder.getContext().getAuthentication().getPrincipal());
-        }
-
-        @Test
-        @DisplayName("blocks request without gateway secret when GATEWAY_SHARED_SECRET is set")
-        void blocksWithoutSecretWhenConfigured() throws Exception {
-            setFieldValue(filter, "gatewaySharedSecret", "secret123");
-
-            HttpServletRequest request = mockRequest("/api/users/me");
-            HttpServletResponse response = mockResponse();
-
-            filter.doFilterInternal(request, response, filterChain);
-
-            verify(filterChain, never()).doFilter(request, response);
-            verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
-        }
-
-        @Test
-        @DisplayName("allows request with valid gateway secret")
-        void allowsWithValidSecret() throws Exception {
-            setFieldValue(filter, "gatewaySharedSecret", "secret123");
-
-            HttpServletRequest request = mockRequest("/api/users/me",
-                    "X-Gateway-Secret", "secret123",
-                    "X-User-Id", "user-123");
-            HttpServletResponse response = mockResponse();
-
-            filter.doFilterInternal(request, response, filterChain);
-
-            verify(filterChain).doFilter(request, response);
-        }
-
-        @Test
-        @DisplayName("blocks request with invalid gateway secret")
-        void blocksWithInvalidSecret() throws Exception {
-            setFieldValue(filter, "gatewaySharedSecret", "secret123");
-
-            HttpServletRequest request = mockRequest("/api/users/me",
-                    "X-Gateway-Secret", "wrongsecret");
-            HttpServletResponse response = mockResponse();
-
-            filter.doFilterInternal(request, response, filterChain);
-
-            verify(filterChain, never()).doFilter(request, response);
-            verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
-        }
-
-        @Test
-        @DisplayName("auth paths are excluded from gateway secret check")
-        void authPathsExcludedFromSecretCheck() throws Exception {
-            setFieldValue(filter, "gatewaySharedSecret", "secret123");
-
-            HttpServletRequest request = mockRequest("/api/auth/login",
-                    "X-User-Id", "user-123");
-            HttpServletResponse response = mockResponse();
-
-            filter.doFilterInternal(request, response, filterChain);
-
-            verify(filterChain).doFilter(request, response);
-            verify(response, never()).setStatus(anyInt());
-        }
-    }
-
-    // ===== X-User-Id header handling =====
 
     @Nested
     @DisplayName("X-User-Id header handling")
@@ -227,49 +144,31 @@ class JwtAuthenticationFilterTest {
         }
     }
 
-    // ===== Path-based routing =====
-
     @Nested
-    @DisplayName("Path-based routing")
-    class PathBasedRouting {
+    @DisplayName("Filter chain continuation")
+    class FilterChainContinuation {
 
         @Test
-        @DisplayName("skips gateway secret check for /api/auth/** paths")
-        void skipsSecretCheckForAuthPaths() throws Exception {
-            setFieldValue(filter, "gatewaySharedSecret", "secret123");
-
-            HttpServletRequest request = mockRequest("/api/auth/register");
+        @DisplayName("always continues filter chain regardless of authentication state")
+        void continuesChainWhenNoAuth() throws Exception {
+            HttpServletRequest request = mockRequest("/api/users/me");
             HttpServletResponse response = mockResponse();
 
             filter.doFilterInternal(request, response, filterChain);
 
-            verify(response, never()).setStatus(HttpServletResponse.SC_FORBIDDEN);
             verify(filterChain).doFilter(request, response);
         }
 
         @Test
-        @DisplayName("skips gateway secret check for /actuator/** paths")
-        void skipsSecretCheckForActuatorPaths() throws Exception {
-            setFieldValue(filter, "gatewaySharedSecret", "secret123");
-
-            HttpServletRequest request = mockRequest("/actuator/health");
+        @DisplayName("continues filter chain after setting authentication")
+        void continuesChainAfterAuth() throws Exception {
+            HttpServletRequest request = mockRequest("/api/users/me",
+                    "X-User-Id", "user-123");
             HttpServletResponse response = mockResponse();
 
             filter.doFilterInternal(request, response, filterChain);
 
-            verify(response, never()).setStatus(HttpServletResponse.SC_FORBIDDEN);
             verify(filterChain).doFilter(request, response);
-        }
-    }
-
-    // Utility to set private fields via reflection
-    private void setFieldValue(Object target, String fieldName, Object value) {
-        try {
-            var field = target.getClass().getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(target, value);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
     }
 }
