@@ -38,6 +38,8 @@ class UserServiceTest {
     private ClanMemberRepository clanMemberRepository;
     @Mock
     private ClanRepository clanRepository;
+    @Mock
+    private UserDeletionService userDeletionService;
 
     private UserService userService;
 
@@ -51,7 +53,8 @@ class UserServiceTest {
                 userAchievementRepository,
                 achievementRepository,
                 clanMemberRepository,
-                clanRepository
+                clanRepository,
+                userDeletionService
         );
     }
 
@@ -348,62 +351,27 @@ class UserServiceTest {
             user.setId(id);
 
             when(userRepository.findById(id)).thenReturn(Optional.of(user));
-            when(userAchievementRepository.findByUserId(id)).thenReturn(List.of());
-            when(clanMemberRepository.findByUserId(id)).thenReturn(List.of());
 
             boolean result = userService.deleteUser(id);
 
             assertTrue(result);
+            verify(userDeletionService).cascadeDelete(id);
             verify(userRepository).delete(user);
         }
 
         @Test
-        @DisplayName("deletes user and cascades achievements")
-        void cascadesAchievements() {
+        @DisplayName("deletes user and delegates cascade to UserDeletionService")
+        void delegatesCascadeToDeletionService() {
             UUID id = UUID.randomUUID();
             User user = new User();
             user.setId(id);
 
-            UserAchievement ua = new UserAchievement();
-            ua.setUserId(id);
-
             when(userRepository.findById(id)).thenReturn(Optional.of(user));
-            when(userAchievementRepository.findByUserId(id)).thenReturn(List.of(ua));
-            when(clanMemberRepository.findByUserId(id)).thenReturn(List.of());
 
             userService.deleteUser(id);
 
-            verify(userAchievementRepository).deleteAll(List.of(ua));
+            verify(userDeletionService).cascadeDelete(id);
             verify(userRepository).delete(user);
-        }
-
-        @Test
-        @DisplayName("deletes clan and its members when user is clan leader")
-        void deletesClanWhenUserIsLeader() {
-            UUID userId = UUID.randomUUID();
-            UUID clanId = UUID.randomUUID();
-
-            User user = new User();
-            user.setId(userId);
-
-            Clan clan = new Clan();
-            clan.setId(clanId);
-            clan.setLeaderId(userId);
-
-            ClanMember member = new ClanMember();
-            member.setUserId(userId);
-            member.setClanId(clanId);
-
-            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-            when(userAchievementRepository.findByUserId(userId)).thenReturn(List.of());
-            when(clanMemberRepository.findByUserId(userId)).thenReturn(List.of(member));
-            when(clanRepository.findById(clanId)).thenReturn(Optional.of(clan));
-            when(clanMemberRepository.findByClanId(clanId)).thenReturn(List.of(member));
-
-            userService.deleteUser(userId);
-
-            verify(clanMemberRepository).findByClanId(clanId);
-            verify(clanRepository).delete(clan);
         }
 
         @Test
@@ -416,6 +384,7 @@ class UserServiceTest {
 
             assertFalse(result);
             verify(userRepository, never()).delete(any());
+            verify(userDeletionService, never()).cascadeDelete(any());
         }
     }
 
