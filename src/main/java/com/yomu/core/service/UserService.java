@@ -23,6 +23,7 @@ public class UserService {
     private final AchievementRepository achievementRepository;
     private final ClanMemberRepository clanMemberRepository;
     private final ClanRepository clanRepository;
+    private final UserDeletionService userDeletionService;
 
     public UserService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
@@ -31,7 +32,8 @@ public class UserService {
                        UserAchievementRepository userAchievementRepository,
                        AchievementRepository achievementRepository,
                        ClanMemberRepository clanMemberRepository,
-                       ClanRepository clanRepository) {
+                       ClanRepository clanRepository,
+                       UserDeletionService userDeletionService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.completedReadingRepository = completedReadingRepository;
@@ -40,6 +42,7 @@ public class UserService {
         this.achievementRepository = achievementRepository;
         this.clanMemberRepository = clanMemberRepository;
         this.clanRepository = clanRepository;
+        this.userDeletionService = userDeletionService;
     }
 
     public Optional<User> findById(UUID id) {
@@ -99,16 +102,7 @@ public class UserService {
     public boolean deleteUser(UUID id) {
         return userRepository.findById(id)
                 .map(user -> {
-                    userAchievementRepository.deleteAll(userAchievementRepository.findByUserId(id));
-                    clanMemberRepository.findByUserId(id).forEach(member -> {
-                        clanMemberRepository.delete(member);
-                        clanRepository.findById(member.getClanId()).ifPresent(clan -> {
-                            if (id.equals(clan.getLeaderId())) {
-                                clanMemberRepository.findByClanId(clan.getId()).forEach(clanMemberRepository::delete);
-                                clanRepository.delete(clan);
-                            }
-                        });
-                    });
+                    userDeletionService.cascadeDelete(id);
                     userRepository.delete(user);
                     return true;
                 })
