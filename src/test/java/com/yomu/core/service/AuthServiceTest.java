@@ -6,8 +6,8 @@ import com.yomu.core.dto.LoginRequest;
 import com.yomu.core.dto.RegisterRequest;
 import com.yomu.core.entity.User;
 import com.yomu.core.repository.UserRepository;
+import com.yomu.core.security.GoogleTokenValidator;
 import com.yomu.core.security.JwtTokenProvider;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -33,16 +33,16 @@ class AuthServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    private JwtTokenProvider jwtTokenProvider;
+    @Mock
+    private GoogleTokenValidator googleTokenValidator;
 
-    private ObjectMapper objectMapper;
+    private JwtTokenProvider jwtTokenProvider;
     private AuthService authService;
 
     private static final String FAKE_TOKEN = "jwt-token-fake";
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
         jwtTokenProvider = new JwtTokenProvider(
                 "test-secret-key-that-is-at-least-256-bits-long-for-hs256-algorithm",
                 3600000L
@@ -51,8 +51,7 @@ class AuthServiceTest {
                 userRepository,
                 passwordEncoder,
                 jwtTokenProvider,
-                objectMapper,
-                ""  // empty googleClientId disables Google token validation
+                googleTokenValidator
         );
     }
 
@@ -392,6 +391,9 @@ class AuthServiceTest {
             GoogleAuthRequest request = new GoogleAuthRequest();
             request.setGoogleId("google-123");
 
+            doThrow(new RuntimeException("Google email and subject are required"))
+                    .when(googleTokenValidator).validate(any(GoogleAuthRequest.class));
+
             RuntimeException ex = assertThrows(RuntimeException.class, () -> authService.googleAuth(request));
             assertEquals("Google email and subject are required", ex.getMessage());
         }
@@ -401,6 +403,9 @@ class AuthServiceTest {
         void throwsWhenGoogleIdBlank() {
             GoogleAuthRequest request = new GoogleAuthRequest();
             request.setEmail("alice@gmail.com");
+
+            doThrow(new RuntimeException("Google email and subject are required"))
+                    .when(googleTokenValidator).validate(any(GoogleAuthRequest.class));
 
             RuntimeException ex = assertThrows(RuntimeException.class, () -> authService.googleAuth(request));
             assertEquals("Google email and subject are required", ex.getMessage());
