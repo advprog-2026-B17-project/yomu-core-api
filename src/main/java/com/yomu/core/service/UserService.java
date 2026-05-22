@@ -132,21 +132,17 @@ public class UserService {
         Double accuracy = quizAttemptRepository.getAverageAccuracyByUserId(userId);
         StatsDTO stats = new StatsDTO(readings, quizzes, accuracy != null ? accuracy : 0.0);
 
-        // Get achievements (all unlocked)
         List<UserAchievement> uaList = includeHiddenAchievements
-                ? userAchievementRepository.findByUserId(userId)
-                : userAchievementRepository.findByUserIdAndIsVisibleTrue(userId);
-        List<Map<String, Object>> achievements = uaList.stream().map(ua -> {
-            Optional<Achievement> achOpt = achievementRepository.findById(ua.getAchievementId());
-            return achOpt.map(ach -> Map.<String, Object>of(
-                "id", ach.getId().toString(),
-                "name", ach.getName(),
-                "unlockedAt", ua.getUnlockedAt().toString(),
-                "visible", ua.getIsVisible() != null ? ua.getIsVisible() : true
-            )).orElse(null);
-        }).filter(Objects::nonNull).collect(Collectors.toList());
+                ? userAchievementRepository.findByUserIdOrderByUnlockedAtDesc(userId)
+                : userAchievementRepository.findByUserIdAndIsVisibleTrueOrderByUnlockedAtDesc(userId);
+        Map<UUID, Achievement> achievementsById = achievementRepository.findAllById(
+                uaList.stream().map(UserAchievement::getAchievementId).toList()
+        ).stream().collect(Collectors.toMap(Achievement::getId, achievement -> achievement));
+        List<ProfileAchievementDTO> achievements = uaList.stream()
+                .map(ua -> toProfileAchievementDTO(ua, achievementsById.get(ua.getAchievementId())))
+                .filter(Objects::nonNull)
+                .toList();
 
-        // Get clan
         List<ClanMember> memberships = clanMemberRepository.findByUserId(userId);
         Map<String, Object> clan = null;
         if (!memberships.isEmpty()) {
@@ -161,6 +157,23 @@ public class UserService {
         }
 
         return new UserProfileDTO(userMap, stats, achievements, clan);
+    }
+
+    private ProfileAchievementDTO toProfileAchievementDTO(UserAchievement userAchievement, Achievement achievement) {
+        if (achievement == null) {
+            return null;
+        }
+
+        return new ProfileAchievementDTO(
+                achievement.getId(),
+                achievement.getName(),
+                achievement.getDescription(),
+                achievement.getMilestone(),
+                achievement.getAchievementType().getValue(),
+                achievement.getIconUrl(),
+                userAchievement.getUnlockedAt(),
+                Boolean.TRUE.equals(userAchievement.getIsVisible())
+        );
     }
 
     private UserDTO toDTO(User user) {

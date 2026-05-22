@@ -20,8 +20,9 @@ public class Achievement {
     @Column(nullable = false)
     private Integer milestone;
 
+    @Convert(converter = AchievementTypeConverter.class)
     @Column(name = "achievement_type", length = 50)
-    private String achievementType = "reading_count";
+    private AchievementType achievementType = AchievementType.READING_COUNT;
 
     @Column(name = "icon_url")
     private String iconUrl;
@@ -61,11 +62,11 @@ public class Achievement {
         this.milestone = milestone;
     }
 
-    public String getAchievementType() {
+    public AchievementType getAchievementType() {
         return achievementType;
     }
 
-    public void setAchievementType(String achievementType) {
+    public void setAchievementType(AchievementType achievementType) {
         this.achievementType = achievementType;
     }
 

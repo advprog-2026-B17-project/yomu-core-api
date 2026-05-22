@@ -92,7 +92,7 @@ public class AchievementService {
                 achievement.getName(),
                 achievement.getDescription(),
                 achievement.getMilestone(),
-                achievement.getAchievementType(),
+                achievement.getAchievementType().getValue(),
                 achievement.getIconUrl());
     }
 }

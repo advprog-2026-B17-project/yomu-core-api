@@ -1,16 +1,16 @@
 package com.yomu.core.dto;
 
+import com.yomu.core.entity.AchievementType;
 import org.hibernate.validator.constraints.URL;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class CreateAchievementRequest {
     @NotBlank
-    @Size(max = 255)
+    @Size(max = 100)
     private String name;
 
     @Size(max = 1000)
@@ -20,8 +20,8 @@ public class CreateAchievementRequest {
     @Min(1)
     private Integer milestone;
 
-    @Pattern(regexp = "reading_count|quiz_perfect")
-    private String achievementType = "reading_count";
+    @NotNull
+    private AchievementType achievementType = AchievementType.READING_COUNT;
 
     @URL
     @Size(max = 255)
@@ -51,11 +51,11 @@ public class CreateAchievementRequest {
         this.milestone = milestone;
     }
 
-    public String getAchievementType() {
+    public AchievementType getAchievementType() {
         return achievementType;
     }
 
-    public void setAchievementType(String achievementType) {
+    public void setAchievementType(AchievementType achievementType) {
         this.achievementType = achievementType;
     }
 
