@@ -23,10 +23,10 @@ public class CreateAchievementRequest {
     @Pattern(regexp = "reading_count|quiz_perfect")
     private String achievementType = "reading_count";
 
-    private String iconUrl;
-
     @URL
     @Size(max = 255)
+    private String iconUrl;
+
     public String getName() {
         return name;
     }
