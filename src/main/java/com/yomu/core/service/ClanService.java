@@ -3,85 +3,66 @@ package com.yomu.core.service;
 import com.yomu.core.dto.ClanDTO;
 import com.yomu.core.entity.Clan;
 import com.yomu.core.entity.ClanMember;
-import com.yomu.core.repository.ClanMemberRepository;
-import com.yomu.core.repository.ClanRepository;
-import com.yomu.core.repository.UserRepository;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ClanService {
 
-    private final ClanRepository clanRepository;
-    private final ClanMemberRepository clanMemberRepository;
-    private final UserRepository userRepository;
-    private final JdbcTemplate jdbcTemplate;
+    private final com.yomu.core.repository.ClanRepository clanRepository;
+    private final com.yomu.core.repository.ClanMemberRepository clanMemberRepository;
+    private final com.yomu.core.repository.UserRepository userRepository;
+    private final ClanNotificationService clanNotificationService;
 
     public ClanService(
-            ClanRepository clanRepository,
-            ClanMemberRepository clanMemberRepository,
-            UserRepository userRepository,
-            JdbcTemplate jdbcTemplate) {
+            com.yomu.core.repository.ClanRepository clanRepository,
+            com.yomu.core.repository.ClanMemberRepository clanMemberRepository,
+            com.yomu.core.repository.UserRepository userRepository,
+            ClanNotificationService clanNotificationService) {
         this.clanRepository = clanRepository;
         this.clanMemberRepository = clanMemberRepository;
         this.userRepository = userRepository;
-        this.jdbcTemplate = jdbcTemplate;
+        this.clanNotificationService = clanNotificationService;
     }
 
-    private void notifyUser(UUID userId, String type, String title, String message) {
-        jdbcTemplate.update(
-                "INSERT INTO gamification.notifications (id, user_id, notification_type, title, message, is_read, created_at) VALUES (?, ?, ?, ?, ?, false, NOW())",
-                UUID.randomUUID(), userId, type, title, message
-        );
-    }
-
-    private void notifyClanMembers(UUID clanId, UUID excludeUserId, String type, String title, String message) {
-        List<ClanMember> members = clanMemberRepository.findByClanId(clanId);
-        for (ClanMember member : members) {
-            if (!member.getUserId().equals(excludeUserId)) {
-                notifyUser(member.getUserId(), type, title, message);
-            }
-        }
+    private ClanDTO toClanDTO(Clan clan) {
+        long memberCount = clanMemberRepository.findByClanId(clan.getId()).size();
+        String myRole = clanMemberRepository.findByClanId(clan.getId()).stream()
+                .findFirst().map(ClanMember::getRole).orElse(null);
+        return new ClanDTO(clan.getId(), clan.getName(), clan.getTier(),
+                clan.getTotalScore(), clan.getLeaderId(), memberCount, myRole);
     }
 
     @Transactional
-    public ClanDTO createClan(UUID userId, String name) {
-        String clanName = normalizeName(name);
-        if (clanMemberRepository.existsByUserId(userId)) {
-            throw new RuntimeException("You are already in a clan");
-        }
-        if (clanRepository.existsByName(clanName)) {
+    public ClanDTO createClan(UUID leaderId, String name) {
+        if (clanRepository.existsByName(name)) {
             throw new RuntimeException("Clan name already exists");
         }
 
         Clan clan = new Clan();
-        clan.setName(clanName);
+        clan.setName(name);
+        clan.setLeaderId(leaderId);
         clan.setTier("bronze");
         clan.setTotalScore(BigDecimal.ZERO);
-        clan.setLeaderId(userId);
         clan = clanRepository.save(clan);
 
-        ClanMember leader = new ClanMember();
-        leader.setClanId(clan.getId());
-        leader.setUserId(userId);
-        leader.setRole("leader");
-        clanMemberRepository.save(leader);
+        ClanMember member = new ClanMember();
+        member.setClanId(clan.getId());
+        member.setUserId(leaderId);
+        member.setRole("leader");
+        clanMemberRepository.save(member);
 
-        return toDTO(clan, "leader");
+        return toClanDTO(clan);
     }
 
     @Transactional
     public ClanDTO joinClan(UUID userId, UUID clanId) {
-        if (clanMemberRepository.existsByUserId(userId)) {
-            throw new RuntimeException("You are already in a clan");
+        if (clanMemberRepository.existsByClanIdAndUserId(clanId, userId)) {
+            throw new RuntimeException("Already a member of this clan");
         }
 
         Clan clan = clanRepository.findById(clanId)
@@ -93,75 +74,77 @@ public class ClanService {
         member.setRole("member");
         clanMemberRepository.save(member);
 
-        String joinerName = userRepository.findById(userId).map(u -> u.getDisplayName()).orElse("Seseorang");
-        notifyClanMembers(clanId, userId, "clan_event",
+        String joinerName = userRepository.findById(userId)
+                .map(u -> u.getDisplayName()).orElse("Seseorang");
+        clanNotificationService.notifyClanMembers(clanId, userId, "clan_event",
                 "Anggota Baru di " + clan.getName(),
                 joinerName + " bergabung dengan clan kamu!");
 
-        return toDTO(clan, "member");
+        return toClanDTO(clan);
     }
 
     @Transactional
     public void leaveClan(UUID userId, UUID clanId) {
-        ClanMember member = clanMemberRepository.findByClanIdAndUserId(clanId, userId)
-                .orElseThrow(() -> new RuntimeException("You are not a member of this clan"));
-        if ("leader".equals(member.getRole())) {
-            throw new RuntimeException("Clan leaders must delete the clan instead of leaving it");
-        }
-
         Clan clan = clanRepository.findById(clanId)
                 .orElseThrow(() -> new RuntimeException("Clan not found"));
 
-        String leaverName = userRepository.findById(userId).map(u -> u.getDisplayName()).orElse("Seseorang");
+        if (clan.getLeaderId().equals(userId)) {
+            throw new RuntimeException("Leader cannot leave the clan. Transfer leadership first or delete the clan.");
+        }
+
+        String leaverName = userRepository.findById(userId)
+                .map(u -> u.getDisplayName()).orElse("Seseorang");
         clanMemberRepository.deleteByClanIdAndUserId(clanId, userId);
 
-        notifyClanMembers(clanId, userId, "clan_event",
+        clanNotificationService.notifyClanMembers(clanId, userId, "clan_event",
                 "Anggota Keluar dari " + clan.getName(),
                 leaverName + " telah keluar dari clan.");
     }
 
     @Transactional
-    public void deleteClan(UUID requesterId, UUID clanId, boolean admin) {
+    public void deleteClan(UUID requestingUserId, UUID clanId, boolean isAdmin) {
         Clan clan = clanRepository.findById(clanId)
                 .orElseThrow(() -> new RuntimeException("Clan not found"));
-        if (!admin && !requesterId.equals(clan.getLeaderId())) {
-            throw new RuntimeException("Only the clan leader can delete this clan");
+
+        if (!isAdmin && !clan.getLeaderId().equals(requestingUserId)) {
+            throw new RuntimeException("Only the clan leader can delete the clan");
         }
 
-        notifyClanMembers(clanId, requesterId, "clan_event",
+        clanNotificationService.notifyClanMembers(clanId, requestingUserId, "clan_event",
                 "Clan " + clan.getName() + " Dibubarkan",
-                "Clan kamu telah dibubarkan oleh pemimpin.");
+                isAdmin ? "Clan kamu telah dibubarkan oleh admin."
+                        : "Clan kamu telah dibubarkan oleh pemimpin.");
 
         clanMemberRepository.deleteByClanId(clanId);
         clanRepository.delete(clan);
     }
 
-    private String normalizeName(String name) {
-        if (!StringUtils.hasText(name)) {
-            throw new RuntimeException("Clan name is required");
-        }
-        String clanName = name.trim();
-        if (clanName.length() > 100) {
-            throw new RuntimeException("Clan name must be at most 100 characters");
-        }
-        return clanName;
+    public Optional<ClanDTO> getClanById(UUID clanId) {
+        return clanRepository.findById(clanId).map(this::toClanDTO);
     }
 
-    private ClanDTO toDTO(Clan clan, String myRole) {
-        return new ClanDTO(
-                clan.getId(),
-                clan.getName(),
-                clan.getTier(),
-                clan.getTotalScore(),
-                clan.getLeaderId(),
-                clanMemberRepository.findByClanId(clan.getId()).size(),
-                myRole
-        );
+    public List<ClanDTO> getAllClans() {
+        return clanRepository.findAllOrderByTotalScoreDesc().stream()
+                .map(this::toClanDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ClanDTO> getLeaderboard() {
+        return clanRepository.findAllOrderByTotalScoreDesc().stream()
+                .map(this::toClanDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ClanDTO> getLeaderboardByTier(String tier) {
+        return clanRepository.findByTierOrderByTotalScoreDesc(tier.toLowerCase()).stream()
+                .map(this::toClanDTO)
+                .collect(Collectors.toList());
     }
 
     public Optional<ClanDTO> getMyClan(UUID userId) {
-        List<ClanMember> memberships = clanMemberRepository.findByUserId(userId);
-        if (memberships.isEmpty()) return Optional.empty();
-        return getClanById(memberships.get(0).getClanId());
+        return clanMemberRepository.findByUserId(userId).stream()
+                .findFirst()
+                .flatMap(m -> clanRepository.findById(m.getClanId()))
+                .map(this::toClanDTO);
     }
 }

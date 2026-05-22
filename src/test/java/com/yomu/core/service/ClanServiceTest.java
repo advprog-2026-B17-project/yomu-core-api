@@ -13,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -28,7 +27,7 @@ class ClanServiceTest {
     @Mock private ClanRepository clanRepository;
     @Mock private ClanMemberRepository clanMemberRepository;
     @Mock private UserRepository userRepository;
-    @Mock private JdbcTemplate jdbcTemplate;
+    @Mock private ClanNotificationService clanNotificationService;
 
     @InjectMocks private ClanService clanService;
 
@@ -58,8 +57,7 @@ class ClanServiceTest {
     void createClan_success() {
         when(clanRepository.existsByName("TestClan")).thenReturn(false);
         when(clanRepository.save(any())).thenReturn(clan);
-        when(clanMemberRepository.findByClanId(clanId)).thenReturn(List.of(new ClanMember()));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(clanMemberRepository.findByClanId(clanId)).thenReturn(List.of());
 
         ClanDTO result = clanService.createClan(userId, "TestClan");
 
@@ -86,19 +84,19 @@ class ClanServiceTest {
         newUser.setId(newUserId);
         newUser.setDisplayName("NewUser");
 
-        when(clanMemberRepository.existsByClanIdAndUserId(clanId, newUserId)).thenReturn(false);
-        when(clanRepository.findById(clanId)).thenReturn(Optional.of(clan));
         ClanMember existingMember = new ClanMember();
         existingMember.setUserId(userId);
+
+        when(clanMemberRepository.existsByClanIdAndUserId(clanId, newUserId)).thenReturn(false);
+        when(clanRepository.findById(clanId)).thenReturn(Optional.of(clan));
         when(clanMemberRepository.findByClanId(clanId)).thenReturn(List.of(existingMember));
         when(userRepository.findById(newUserId)).thenReturn(Optional.of(newUser));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(jdbcTemplate.update(anyString(), any(), any(), any(), any(), any())).thenReturn(1);
 
         ClanDTO result = clanService.joinClan(newUserId, clanId);
 
         assertNotNull(result);
         verify(clanMemberRepository).save(any());
+        verify(clanNotificationService).notifyClanMembers(eq(clanId), eq(newUserId), any(), any(), any());
     }
 
     @Test
@@ -119,10 +117,10 @@ class ClanServiceTest {
 
         when(clanRepository.findById(clanId)).thenReturn(Optional.of(clan));
         when(userRepository.findById(memberId)).thenReturn(Optional.of(member));
-        when(clanMemberRepository.findByClanId(clanId)).thenReturn(List.of());
 
         assertDoesNotThrow(() -> clanService.leaveClan(memberId, clanId));
         verify(clanMemberRepository).deleteByClanIdAndUserId(clanId, memberId);
+        verify(clanNotificationService).notifyClanMembers(eq(clanId), eq(memberId), any(), any(), any());
     }
 
     @Test
@@ -138,10 +136,9 @@ class ClanServiceTest {
     @Test
     void deleteClan_success() {
         when(clanRepository.findById(clanId)).thenReturn(Optional.of(clan));
-        when(clanMemberRepository.findByClanId(clanId)).thenReturn(List.of());
-
-        assertDoesNotThrow(() -> clanService.deleteClan(clanId, userId));
+        assertDoesNotThrow(() -> clanService.deleteClan(userId, clanId, false));
         verify(clanRepository).delete(clan);
+        verify(clanNotificationService).notifyClanMembers(eq(clanId), eq(userId), any(), any(), any());
     }
 
     @Test
@@ -150,7 +147,7 @@ class ClanServiceTest {
         when(clanRepository.findById(clanId)).thenReturn(Optional.of(clan));
 
         assertThrows(RuntimeException.class, () ->
-                clanService.deleteClan(clanId, otherId)
+                clanService.deleteClan(otherId, clanId, false)
         );
         verify(clanRepository, never()).delete(any());
     }
