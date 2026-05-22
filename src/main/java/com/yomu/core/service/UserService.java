@@ -20,17 +20,20 @@ public class UserService {
     private final CompletedReadingRepository completedReadingRepository;
     private final QuizAttemptRepository quizAttemptRepository;
     private final UserDeletionService userDeletionService;
+    private final EventPublisher eventPublisher;
 
     public UserService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        CompletedReadingRepository completedReadingRepository,
                        QuizAttemptRepository quizAttemptRepository,
-                       UserDeletionService userDeletionService) {
+                       UserDeletionService userDeletionService,
+                       EventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.completedReadingRepository = completedReadingRepository;
         this.quizAttemptRepository = quizAttemptRepository;
         this.userDeletionService = userDeletionService;
+        this.eventPublisher = eventPublisher;
     }
 
     public Optional<User> findById(UUID id) {
@@ -82,6 +85,7 @@ public class UserService {
                     }
 
                     User updated = userRepository.save(user);
+                    eventPublisher.publishUserUpdated(updated.getId(), updated.getUsername(), updated.getDisplayName(), updated.getRole());
                     return toDTO(updated);
                 });
     }

@@ -9,13 +9,14 @@ import java.util.UUID;
 @Service
 public class UserDeletionService {
 
-    public UserDeletionService() {
-        // Default constructor for service instantiation
+    private final EventPublisher eventPublisher;
+
+    public UserDeletionService(EventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
     public void cascadeDelete(UUID userId) {
-        // Gamification cleanup is handled by yomu-gamification-api via events
-        // Core only needs to handle user record deletion
+        eventPublisher.publishUserDeleted(userId);
     }
 }

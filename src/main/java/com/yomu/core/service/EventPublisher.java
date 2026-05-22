@@ -96,6 +96,42 @@ public class EventPublisher {
         publish("season.ended", event);
     }
 
+    /**
+     * Publish user.created event after a new user registers.
+     */
+    public void publishUserCreated(UUID userId, String username, String displayName, String role) {
+        Map<String, Object> event = buildEvent("user.created", Map.of(
+            "userId", userId.toString(),
+            "username", username,
+            "displayName", displayName,
+            "role", role
+        ));
+        publish("user.created", event);
+    }
+
+    /**
+     * Publish user.updated event after user profile is updated.
+     */
+    public void publishUserUpdated(UUID userId, String username, String displayName, String role) {
+        Map<String, Object> event = buildEvent("user.updated", Map.of(
+            "userId", userId.toString(),
+            "username", username,
+            "displayName", displayName,
+            "role", role
+        ));
+        publish("user.updated", event);
+    }
+
+    /**
+     * Publish user.deleted event before user account is deleted.
+     */
+    public void publishUserDeleted(UUID userId) {
+        Map<String, Object> event = buildEvent("user.deleted", Map.of(
+            "userId", userId.toString()
+        ));
+        publish("user.deleted", event);
+    }
+
     private Map<String, Object> buildEvent(String eventType, Map<String, Object> payload) {
         Map<String, Object> event = new HashMap<>();
         event.put("eventId", UUID.randomUUID().toString());
