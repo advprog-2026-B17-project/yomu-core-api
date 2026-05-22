@@ -17,16 +17,19 @@ public class ClanService {
     private final com.yomu.core.repository.ClanMemberRepository clanMemberRepository;
     private final com.yomu.core.repository.UserRepository userRepository;
     private final ClanNotificationService clanNotificationService;
+    private final com.yomu.core.strategy.ClanScoringContext clanScoringContext;
 
     public ClanService(
             com.yomu.core.repository.ClanRepository clanRepository,
             com.yomu.core.repository.ClanMemberRepository clanMemberRepository,
             com.yomu.core.repository.UserRepository userRepository,
-            ClanNotificationService clanNotificationService) {
+            ClanNotificationService clanNotificationService,
+            com.yomu.core.strategy.ClanScoringContext clanScoringContext) {
         this.clanRepository = clanRepository;
         this.clanMemberRepository = clanMemberRepository;
         this.userRepository = userRepository;
         this.clanNotificationService = clanNotificationService;
+        this.clanScoringContext = clanScoringContext;
     }
 
     private ClanDTO toClanDTO(Clan clan) {
@@ -131,16 +134,41 @@ public class ClanService {
 
     public List<ClanDTO> getLeaderboard() {
         return clanRepository.findAllOrderByTotalScoreDesc().stream()
-                .map(this::toClanDTO)
+                .map(clan -> {
+                    int memberCount = (int) clanMemberRepository.findByClanId(clan.getId()).size();
+                    double effectiveScore = clanScoringContext.calculateScore(
+                            clan.getTier(),
+                            clan.getTotalScore().doubleValue(),
+                            memberCount
+                    );
+                    return new com.yomu.core.dto.ClanDTO(
+                            clan.getId(), clan.getName(), clan.getTier(),
+                            java.math.BigDecimal.valueOf(effectiveScore),
+                            clan.getLeaderId(), memberCount, null
+                    );
+                })
+                .sorted((a, b) -> b.getTotalScore().compareTo(a.getTotalScore()))
                 .collect(Collectors.toList());
     }
 
     public List<ClanDTO> getLeaderboardByTier(String tier) {
         return clanRepository.findByTierOrderByTotalScoreDesc(tier.toLowerCase()).stream()
-                .map(this::toClanDTO)
+                .map(clan -> {
+                    int memberCount = (int) clanMemberRepository.findByClanId(clan.getId()).size();
+                    double effectiveScore = clanScoringContext.calculateScore(
+                            clan.getTier(),
+                            clan.getTotalScore().doubleValue(),
+                            memberCount
+                    );
+                    return new com.yomu.core.dto.ClanDTO(
+                            clan.getId(), clan.getName(), clan.getTier(),
+                            java.math.BigDecimal.valueOf(effectiveScore),
+                            clan.getLeaderId(), memberCount, null
+                    );
+                })
+                .sorted((a, b) -> b.getTotalScore().compareTo(a.getTotalScore()))
                 .collect(Collectors.toList());
     }
-
     public Optional<ClanDTO> getMyClan(UUID userId) {
         return clanMemberRepository.findByUserId(userId).stream()
                 .findFirst()
