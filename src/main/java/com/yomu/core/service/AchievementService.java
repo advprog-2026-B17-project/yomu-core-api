@@ -1,6 +1,7 @@
 package com.yomu.core.service;
 
 import com.yomu.core.dto.AchievementDTO;
+import com.yomu.core.dto.AchievementVisibilityDTO;
 import com.yomu.core.dto.CreateAchievementRequest;
 import com.yomu.core.entity.Achievement;
 import com.yomu.core.entity.UserAchievement;
@@ -62,12 +63,15 @@ public class AchievementService {
     }
 
     @Transactional
-    public Optional<UserAchievement> setVisibility(UUID userId, UUID achievementId, boolean visible) {
+    public Optional<AchievementVisibilityDTO> setVisibility(UUID userId, UUID achievementId, boolean visible) {
         return userAchievementRepository.findByUserIdAndAchievementId(userId, achievementId)
                 .map(userAchievement -> {
                     userAchievement.setIsVisible(visible);
 
-                    return userAchievementRepository.save(userAchievement);
+                    UserAchievement savedUserAchievement = userAchievementRepository.save(userAchievement);
+
+                    return new AchievementVisibilityDTO(savedUserAchievement.getAchievementId(),
+                            Boolean.TRUE.equals(savedUserAchievement.getIsVisible()));
                 });
     }
 
