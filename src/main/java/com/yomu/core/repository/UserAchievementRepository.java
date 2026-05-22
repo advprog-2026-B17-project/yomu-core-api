@@ -12,5 +12,7 @@ import java.util.UUID;
 public interface UserAchievementRepository extends JpaRepository<UserAchievement, UUID> {
     List<UserAchievement> findByUserId(UUID userId);
     List<UserAchievement> findByUserIdAndIsVisibleTrue(UUID userId);
+    List<UserAchievement> findByUserIdOrderByUnlockedAtDesc(UUID userId);
+    List<UserAchievement> findByUserIdAndIsVisibleTrueOrderByUnlockedAtDesc(UUID userId);
     Optional<UserAchievement> findByUserIdAndAchievementId(UUID userId, UUID achievementId);
 }

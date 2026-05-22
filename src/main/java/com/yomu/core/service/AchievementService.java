@@ -1,14 +1,15 @@
 package com.yomu.core.service;
 
 import com.yomu.core.dto.AchievementDTO;
+import com.yomu.core.dto.AchievementVisibilityDTO;
 import com.yomu.core.dto.CreateAchievementRequest;
 import com.yomu.core.entity.Achievement;
 import com.yomu.core.entity.UserAchievement;
+import com.yomu.core.exception.ResourceNotFoundException;
 import com.yomu.core.repository.AchievementRepository;
 import com.yomu.core.repository.UserAchievementRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +22,7 @@ public class AchievementService {
     private final UserAchievementRepository userAchievementRepository;
 
     public AchievementService(AchievementRepository achievementRepository,
-                              UserAchievementRepository userAchievementRepository) {
+            UserAchievementRepository userAchievementRepository) {
         this.achievementRepository = achievementRepository;
         this.userAchievementRepository = userAchievementRepository;
     }
@@ -35,39 +36,53 @@ public class AchievementService {
     @Transactional
     public AchievementDTO createAchievement(CreateAchievementRequest request) {
         Achievement achievement = new Achievement();
+
         applyRequest(achievement, request);
+
         return toDTO(achievementRepository.save(achievement));
     }
 
     @Transactional
     public AchievementDTO updateAchievement(UUID id, CreateAchievementRequest request) {
         Achievement achievement = achievementRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Achievement not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Achievement", id));
+
         applyRequest(achievement, request);
+
         return toDTO(achievementRepository.save(achievement));
     }
 
     @Transactional
     public void deleteAchievement(UUID id) {
+        if (!achievementRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Achievement", id);
+        }
+
         achievementRepository.deleteById(id);
     }
 
     @Transactional
-    public Optional<UserAchievement> setVisibility(UUID userId, UUID achievementId, boolean visible) {
+    public Optional<AchievementVisibilityDTO> setVisibility(UUID userId, UUID achievementId, boolean visible) {
         return userAchievementRepository.findByUserIdAndAchievementId(userId, achievementId)
                 .map(userAchievement -> {
                     userAchievement.setIsVisible(visible);
-                    return userAchievementRepository.save(userAchievement);
+
+                    UserAchievement savedUserAchievement = userAchievementRepository.save(userAchievement);
+
+                    return new AchievementVisibilityDTO(savedUserAchievement.getAchievementId(),
+                            Boolean.TRUE.equals(savedUserAchievement.getIsVisible()));
                 });
     }
 
     private void applyRequest(Achievement achievement, CreateAchievementRequest request) {
         achievement.setName(request.getName());
+
         achievement.setDescription(request.getDescription());
+
         achievement.setMilestone(request.getMilestone());
-        achievement.setAchievementType(
-                StringUtils.hasText(request.getAchievementType()) ? request.getAchievementType() : "reading_count"
-        );
+
+        achievement.setAchievementType(request.getAchievementType());
+
         achievement.setIconUrl(request.getIconUrl());
     }
 
@@ -77,8 +92,7 @@ public class AchievementService {
                 achievement.getName(),
                 achievement.getDescription(),
                 achievement.getMilestone(),
-                achievement.getAchievementType(),
-                achievement.getIconUrl()
-        );
+                achievement.getAchievementType().getValue(),
+                achievement.getIconUrl());
     }
 }

@@ -32,20 +32,67 @@ public class DailyMission {
     @Column(name = "created_at")
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public String getTargetType() { return targetType; }
-    public void setTargetType(String targetType) { this.targetType = targetType; }
-    public Integer getTargetCount() { return targetCount; }
-    public void setTargetCount(Integer targetCount) { this.targetCount = targetCount; }
-    public Integer getXpReward() { return xpReward; }
-    public void setXpReward(Integer xpReward) { this.xpReward = xpReward; }
-    public Boolean getIsActive() { return isActive; }
-    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
-    public OffsetDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getTargetType() {
+        return targetType;
+    }
+
+    public void setTargetType(String targetType) {
+        this.targetType = targetType;
+    }
+
+    public Integer getTargetCount() {
+        return targetCount;
+    }
+
+    public void setTargetCount(Integer targetCount) {
+        this.targetCount = targetCount;
+    }
+
+    public Integer getXpReward() {
+        return xpReward;
+    }
+
+    public void setXpReward(Integer xpReward) {
+        this.xpReward = xpReward;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

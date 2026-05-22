@@ -20,8 +20,9 @@ public class Achievement {
     @Column(nullable = false)
     private Integer milestone;
 
+    @Convert(converter = AchievementTypeConverter.class)
     @Column(name = "achievement_type", length = 50)
-    private String achievementType = "reading_count";
+    private AchievementType achievementType = AchievementType.READING_COUNT;
 
     @Column(name = "icon_url")
     private String iconUrl;
@@ -29,18 +30,59 @@ public class Achievement {
     @Column(name = "created_at")
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    public Integer getMilestone() { return milestone; }
-    public void setMilestone(Integer milestone) { this.milestone = milestone; }
-    public String getAchievementType() { return achievementType; }
-    public void setAchievementType(String achievementType) { this.achievementType = achievementType; }
-    public String getIconUrl() { return iconUrl; }
-    public void setIconUrl(String iconUrl) { this.iconUrl = iconUrl; }
-    public OffsetDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Integer getMilestone() {
+        return milestone;
+    }
+
+    public void setMilestone(Integer milestone) {
+        this.milestone = milestone;
+    }
+
+    public AchievementType getAchievementType() {
+        return achievementType;
+    }
+
+    public void setAchievementType(AchievementType achievementType) {
+        this.achievementType = achievementType;
+    }
+
+    public String getIconUrl() {
+        return iconUrl;
+    }
+
+    public void setIconUrl(String iconUrl) {
+        this.iconUrl = iconUrl;
+    }
+
+    public OffsetDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(OffsetDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }
