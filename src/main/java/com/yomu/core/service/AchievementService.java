@@ -45,7 +45,9 @@ public class AchievementService {
     public AchievementDTO updateAchievement(UUID id, CreateAchievementRequest request) {
         Achievement achievement = achievementRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Achievement not found"));
+                
         applyRequest(achievement, request);
+
         return toDTO(achievementRepository.save(achievement));
     }
 
@@ -59,16 +61,21 @@ public class AchievementService {
         return userAchievementRepository.findByUserIdAndAchievementId(userId, achievementId)
                 .map(userAchievement -> {
                     userAchievement.setIsVisible(visible);
+
                     return userAchievementRepository.save(userAchievement);
                 });
     }
 
     private void applyRequest(Achievement achievement, CreateAchievementRequest request) {
         achievement.setName(request.getName());
+
         achievement.setDescription(request.getDescription());
+
         achievement.setMilestone(request.getMilestone());
+
         achievement.setAchievementType(
                 StringUtils.hasText(request.getAchievementType()) ? request.getAchievementType() : "reading_count");
+                
         achievement.setIconUrl(request.getIconUrl());
     }
 

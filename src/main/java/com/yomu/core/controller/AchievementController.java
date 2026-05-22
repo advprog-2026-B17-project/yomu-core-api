@@ -38,7 +38,7 @@ public class AchievementController {
     @PutMapping("/api/admin/achievements/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AchievementDTO> updateAchievement(@PathVariable UUID id,
-                                                            @Valid @RequestBody CreateAchievementRequest request) {
+            @Valid @RequestBody CreateAchievementRequest request) {
         return ResponseEntity.ok(achievementService.updateAchievement(id, request));
     }
 
@@ -46,6 +46,7 @@ public class AchievementController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteAchievement(@PathVariable UUID id) {
         achievementService.deleteAchievement(id);
+
         return ResponseEntity.noContent().build();
     }
 
@@ -55,6 +56,7 @@ public class AchievementController {
             @RequestParam boolean visible,
             Authentication authentication) {
         UUID userId = UUID.fromString((String) authentication.getPrincipal());
+        
         return achievementService.setVisibility(userId, achievementId, visible)
                 .map(this::visibilityResponse)
                 .map(ResponseEntity::ok)
@@ -64,7 +66,6 @@ public class AchievementController {
     private Map<String, Object> visibilityResponse(UserAchievement userAchievement) {
         return Map.of(
                 "achievementId", userAchievement.getAchievementId().toString(),
-                "visible", userAchievement.getIsVisible()
-        );
+                "visible", userAchievement.getIsVisible());
     }
 }
