@@ -31,6 +31,8 @@ class UserServiceTest {
     private QuizAttemptRepository quizAttemptRepository;
     @Mock
     private UserDeletionService userDeletionService;
+    @Mock
+    private EventPublisher eventPublisher;
 
     private UserService userService;
 
@@ -41,7 +43,8 @@ class UserServiceTest {
                 passwordEncoder,
                 completedReadingRepository,
                 quizAttemptRepository,
-                userDeletionService
+                userDeletionService,
+                eventPublisher
         );
     }
 
