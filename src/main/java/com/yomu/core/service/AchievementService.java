@@ -4,6 +4,7 @@ import com.yomu.core.dto.AchievementDTO;
 import com.yomu.core.dto.CreateAchievementRequest;
 import com.yomu.core.entity.Achievement;
 import com.yomu.core.entity.UserAchievement;
+import com.yomu.core.exception.ResourceNotFoundException;
 import com.yomu.core.repository.AchievementRepository;
 import com.yomu.core.repository.UserAchievementRepository;
 import org.springframework.stereotype.Service;
@@ -44,8 +45,8 @@ public class AchievementService {
     @Transactional
     public AchievementDTO updateAchievement(UUID id, CreateAchievementRequest request) {
         Achievement achievement = achievementRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Achievement not found"));
-                
+                .orElseThrow(() -> new ResourceNotFoundException("Achievement", id));
+
         applyRequest(achievement, request);
 
         return toDTO(achievementRepository.save(achievement));
@@ -53,6 +54,10 @@ public class AchievementService {
 
     @Transactional
     public void deleteAchievement(UUID id) {
+        if (!achievementRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Achievement", id);
+        }
+
         achievementRepository.deleteById(id);
     }
 
@@ -75,7 +80,7 @@ public class AchievementService {
 
         achievement.setAchievementType(
                 StringUtils.hasText(request.getAchievementType()) ? request.getAchievementType() : "reading_count");
-                
+
         achievement.setIconUrl(request.getIconUrl());
     }
 
