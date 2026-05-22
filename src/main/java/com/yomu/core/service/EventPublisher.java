@@ -73,7 +73,7 @@ public class EventPublisher {
 
     /**
      * Publish achievement.unlocked event after an achievement is unlocked.
-     * Note: According to EVENTS_CONTRACT.md, this is typically published by yomu-gamification-engine,
+     * Note: According to EVENTS_CONTRACT.md, this is typically published by yomu-gamification-api,
      * but can be used for cross-service notifications.
      */
     public void publishAchievementUnlocked(UUID userId, UUID achievementId, String achievementName) {

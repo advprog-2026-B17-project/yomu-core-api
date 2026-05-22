@@ -114,7 +114,7 @@ public class UserService {
         Double accuracy = quizAttemptRepository.getAverageAccuracyByUserId(userId);
         StatsDTO stats = new StatsDTO(readings, quizzes, accuracy != null ? accuracy : 0.0);
 
-        // Achievements and clan are gamification concerns - handled by yomu-gamification-engine
+        // Achievements and clan are gamification concerns - handled by yomu-gamification-api via events
         return new UserProfileDTO(userMap, stats);
     }
 

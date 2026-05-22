@@ -15,7 +15,7 @@ public class UserDeletionService {
 
     @Transactional
     public void cascadeDelete(UUID userId) {
-        // Gamification cleanup is handled by yomu-gamification-engine
+        // Gamification cleanup is handled by yomu-gamification-api via events
         // Core only needs to handle user record deletion
     }
 }
