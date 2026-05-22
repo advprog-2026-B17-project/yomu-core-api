@@ -24,7 +24,7 @@ public class OutboxEvent {
     @Column(name = "aggregate_id")
     private UUID aggregateId;
 
-    @Column(name = "payload", nullable = false, columnDefinition = "jsonb")
+    @Column(name = "payload", nullable = false, columnDefinition = "text")
     private String payload;
 
     @Column(name = "created_at", nullable = false)
