@@ -10,7 +10,6 @@ import com.yomu.core.repository.AchievementRepository;
 import com.yomu.core.repository.UserAchievementRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -82,8 +81,7 @@ public class AchievementService {
 
         achievement.setMilestone(request.getMilestone());
 
-        achievement.setAchievementType(
-                StringUtils.hasText(request.getAchievementType()) ? request.getAchievementType() : "reading_count");
+        achievement.setAchievementType(request.getAchievementType());
 
         achievement.setIconUrl(request.getIconUrl());
     }
