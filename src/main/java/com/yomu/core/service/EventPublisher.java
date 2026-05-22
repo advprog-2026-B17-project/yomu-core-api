@@ -1,10 +1,12 @@
 package com.yomu.core.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yomu.core.entity.OutboxEvent;
+import com.yomu.core.repository.OutboxEventRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -15,20 +17,21 @@ import java.util.UUID;
 
 /**
  * Centralized event publisher for RabbitMQ events.
- * Publishes to the yomu.events topic exchange.
+ * Uses transactional outbox pattern: inserts events into outbox table within the same transaction.
+ * A scheduled publisher (OutboxPublisher) then sends outbox events to RabbitMQ.
  */
 @Service
 public class EventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(EventPublisher.class);
 
-    private final RabbitTemplate rabbitTemplate;
-    private final String exchange;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
 
-    public EventPublisher(RabbitTemplate rabbitTemplate,
-                         @Value("${rabbitmq.exchange}") String exchange) {
-        this.rabbitTemplate = rabbitTemplate;
-        this.exchange = exchange;
+    public EventPublisher(OutboxEventRepository outboxEventRepository,
+                         ObjectMapper objectMapper) {
+        this.outboxEventRepository = outboxEventRepository;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -141,13 +144,18 @@ public class EventPublisher {
         return event;
     }
 
-    private void publish(String routingKey, Map<String, Object> event) {
+    private void publish(String eventType, Map<String, Object> event) {
         try {
-            rabbitTemplate.convertAndSend(exchange, routingKey, event);
-            log.info("Published event {} with routing key {}", event.get("eventType"), routingKey);
-        } catch (Exception e) {
-            log.error("Failed to publish event {}: {}", event.get("eventType"), e.getMessage());
-            // Don't fail the main operation - event publishing is async and non-critical
+            String payloadJson = objectMapper.writeValueAsString(event);
+            OutboxEvent outboxEvent = new OutboxEvent(
+                UUID.fromString((String) event.get("eventId")),
+                eventType,
+                payloadJson
+            );
+            outboxEventRepository.save(outboxEvent);
+            log.info("Inserted event {} into outbox", eventType);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize event {}: {}", eventType, e.getMessage());
         }
     }
 }
