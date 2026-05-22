@@ -30,7 +30,8 @@ public class AchievementController {
         return ResponseEntity.ok(achievementService.getAllAchievements());
     }
 
-    @PostMapping("/admin/achievements")
+    @PostMapping("/api/admin/achievements")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<AchievementDTO> createAchievement(
             @Valid @RequestBody CreateAchievementRequest request) {
         AchievementDTO created = achievementService.createAchievement(request);
