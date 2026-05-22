@@ -49,18 +49,22 @@ public class QuizService {
         this.eventPublisher = eventPublisher;
     }
 
+    @Transactional(readOnly = true)
     public List<Reading> getAllReadings() {
         return readingRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Optional<Reading> getReadingById(UUID id) {
         return readingRepository.findById(id);
     }
 
+    @Transactional(readOnly = true)
     public List<Question> getQuestionsForReading(UUID readingId) {
         return questionRepository.findByReadingId(readingId);
     }
 
+    @Transactional(readOnly = true)
     public List<QuestionDTO> getQuestionDTOsForReading(UUID readingId) {
         return questionRepository.findByReadingId(readingId).stream()
                 .map(question -> new QuestionDTO(
