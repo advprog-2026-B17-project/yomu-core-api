@@ -1,6 +1,7 @@
 package com.yomu.core.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yomu.core.dto.ProfileAchievementDTO;
 import com.yomu.core.dto.UpdateUserRequest;
 import com.yomu.core.dto.UserDTO;
 import com.yomu.core.dto.UserProfileDTO;
@@ -133,7 +134,15 @@ class UserControllerTest {
             UserProfileDTO profile = new UserProfileDTO(
                     Map.of("username", "bob", "displayName", "Bob"),
                     new StatsDTO(5, 2, 70.0),
-                    List.of(Map.of("name", "First Read")),
+                    List.of(new ProfileAchievementDTO(
+                            UUID.randomUUID(),
+                            "First Read",
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            true)),
                     null
             );
 
