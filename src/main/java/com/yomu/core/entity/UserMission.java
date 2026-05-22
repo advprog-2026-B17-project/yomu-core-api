@@ -31,18 +31,59 @@ public class UserMission {
     @JoinColumn(name = "mission_id", insertable = false, updatable = false)
     private DailyMission mission;
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
-    public UUID getUserId() { return userId; }
-    public void setUserId(UUID userId) { this.userId = userId; }
-    public UUID getMissionId() { return missionId; }
-    public void setMissionId(UUID missionId) { this.missionId = missionId; }
-    public Integer getProgress() { return progress; }
-    public void setProgress(Integer progress) { this.progress = progress; }
-    public Boolean getClaimed() { return claimed; }
-    public void setClaimed(Boolean claimed) { this.claimed = claimed; }
-    public LocalDate getDate() { return date; }
-    public void setDate(LocalDate date) { this.date = date; }
-    public DailyMission getMission() { return mission; }
-    public void setMission(DailyMission mission) { this.mission = mission; }
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
+    }
+
+    public UUID getMissionId() {
+        return missionId;
+    }
+
+    public void setMissionId(UUID missionId) {
+        this.missionId = missionId;
+    }
+
+    public Integer getProgress() {
+        return progress;
+    }
+
+    public void setProgress(Integer progress) {
+        this.progress = progress;
+    }
+
+    public Boolean getClaimed() {
+        return claimed;
+    }
+
+    public void setClaimed(Boolean claimed) {
+        this.claimed = claimed;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public void setDate(LocalDate date) {
+        this.date = date;
+    }
+
+    public DailyMission getMission() {
+        return mission;
+    }
+
+    public void setMission(DailyMission mission) {
+        this.mission = mission;
+    }
 }

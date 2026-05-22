@@ -21,7 +21,7 @@ public class AchievementService {
     private final UserAchievementRepository userAchievementRepository;
 
     public AchievementService(AchievementRepository achievementRepository,
-                              UserAchievementRepository userAchievementRepository) {
+            UserAchievementRepository userAchievementRepository) {
         this.achievementRepository = achievementRepository;
         this.userAchievementRepository = userAchievementRepository;
     }
@@ -35,7 +35,9 @@ public class AchievementService {
     @Transactional
     public AchievementDTO createAchievement(CreateAchievementRequest request) {
         Achievement achievement = new Achievement();
+
         applyRequest(achievement, request);
+
         return toDTO(achievementRepository.save(achievement));
     }
 
@@ -66,8 +68,7 @@ public class AchievementService {
         achievement.setDescription(request.getDescription());
         achievement.setMilestone(request.getMilestone());
         achievement.setAchievementType(
-                StringUtils.hasText(request.getAchievementType()) ? request.getAchievementType() : "reading_count"
-        );
+                StringUtils.hasText(request.getAchievementType()) ? request.getAchievementType() : "reading_count");
         achievement.setIconUrl(request.getIconUrl());
     }
 
@@ -78,7 +79,6 @@ public class AchievementService {
                 achievement.getDescription(),
                 achievement.getMilestone(),
                 achievement.getAchievementType(),
-                achievement.getIconUrl()
-        );
+                achievement.getIconUrl());
     }
 }
