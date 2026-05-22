@@ -19,6 +19,7 @@
 
     <properties>
         <java.version>17</java.version>
+        <argLine>-Dnet.bytebuddy.experimental=true</argLine>
     </properties>
 
     <dependencies>
@@ -92,6 +93,11 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -108,6 +114,27 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>0.8.11</version> <!-- Gunakan versi terbaru jika diperlukan -->
+            <executions>
+                <!-- Menyiapkan agent JaCoCo sebelum tes berjalan -->
+                <execution>
+                    <goals>
+                        <goal>prepare-agent</goal>
+                    </goals>
+                </execution>
+                <!-- Menghasilkan laporan setelah tes selesai -->
+                <execution>
+                    <id>report</id>
+                    <phase>test</phase>
+                    <goals>
+                        <goal>report</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
         </plugins>
     </build>
 </project>
