@@ -30,10 +30,8 @@ public class UserController {
     }
 
     @GetMapping("/{id}/profile")
-    public ResponseEntity<UserProfileDTO> getUserProfile(@PathVariable UUID id, Authentication authentication) {
-        UUID requestingUserId = UUID.fromString((String) authentication.getPrincipal());
-        boolean includeHiddenAchievements = id.equals(requestingUserId) || isAdmin(authentication);
-        return ResponseEntity.ok(userService.getUserProfile(id, includeHiddenAchievements));
+    public ResponseEntity<UserProfileDTO> getUserProfile(@PathVariable UUID id) {
+        return ResponseEntity.ok(userService.getUserProfile(id));
     }
 
     @PutMapping("/{id}")

@@ -6,19 +6,12 @@ import java.util.Map;
 public class UserProfileDTO {
     private Map<String, Object> user;
     private StatsDTO stats;
-    private List<ProfileAchievementDTO> achievements;
-    private Map<String, Object> clan;
 
-    public UserProfileDTO(Map<String, Object> user, StatsDTO stats,
-                        List<ProfileAchievementDTO> achievements, Map<String, Object> clan) {
+    public UserProfileDTO(Map<String, Object> user, StatsDTO stats) {
         this.user = user;
         this.stats = stats;
-        this.achievements = achievements;
-        this.clan = clan;
     }
 
     public Map<String, Object> getUser() { return user; }
     public StatsDTO getStats() { return stats; }
-    public List<ProfileAchievementDTO> getAchievements() { return achievements; }
-    public Map<String, Object> getClan() { return clan; }
 }
