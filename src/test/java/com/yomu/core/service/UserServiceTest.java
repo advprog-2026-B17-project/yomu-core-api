@@ -431,9 +431,9 @@ class UserServiceTest {
             when(completedReadingRepository.countByUserId(userId)).thenReturn(10L);
             when(quizAttemptRepository.countByUserId(userId)).thenReturn(5L);
             when(quizAttemptRepository.getAverageAccuracyByUserId(userId)).thenReturn(85.5);
-            when(userAchievementRepository.findByUserIdAndIsVisibleTrue(userId))
+            when(userAchievementRepository.findByUserIdAndIsVisibleTrueOrderByUnlockedAtDesc(userId))
                     .thenReturn(List.of(ua));
-            when(achievementRepository.findById(achievementId)).thenReturn(Optional.of(achievement));
+            when(achievementRepository.findAllById(List.of(achievementId))).thenReturn(List.of(achievement));
             when(clanMemberRepository.findByUserId(userId)).thenReturn(List.of(member));
             when(clanRepository.findById(clanId)).thenReturn(Optional.of(clan));
 
@@ -465,15 +465,15 @@ class UserServiceTest {
             when(completedReadingRepository.countByUserId(userId)).thenReturn(0L);
             when(quizAttemptRepository.countByUserId(userId)).thenReturn(0L);
             when(quizAttemptRepository.getAverageAccuracyByUserId(userId)).thenReturn(null);
-            when(userAchievementRepository.findByUserIdAndIsVisibleTrue(userId)).thenReturn(List.of());
+            when(userAchievementRepository.findByUserIdAndIsVisibleTrueOrderByUnlockedAtDesc(userId)).thenReturn(List.of());
             when(clanMemberRepository.findByUserId(userId)).thenReturn(List.of());
 
             UserProfileDTO profile = userService.getUserProfile(userId, false);
 
             assertNotNull(profile);
             assertTrue(profile.getAchievements().isEmpty());
-            verify(userAchievementRepository).findByUserIdAndIsVisibleTrue(userId);
-            verify(userAchievementRepository, never()).findByUserId(any());
+            verify(userAchievementRepository).findByUserIdAndIsVisibleTrueOrderByUnlockedAtDesc(userId);
+            verify(userAchievementRepository, never()).findByUserIdOrderByUnlockedAtDesc(any());
         }
 
         @Test
@@ -492,13 +492,13 @@ class UserServiceTest {
             when(completedReadingRepository.countByUserId(userId)).thenReturn(0L);
             when(quizAttemptRepository.countByUserId(userId)).thenReturn(0L);
             when(quizAttemptRepository.getAverageAccuracyByUserId(userId)).thenReturn(null);
-            when(userAchievementRepository.findByUserId(userId)).thenReturn(List.of());
+            when(userAchievementRepository.findByUserIdOrderByUnlockedAtDesc(userId)).thenReturn(List.of());
             when(clanMemberRepository.findByUserId(userId)).thenReturn(List.of());
 
             userService.getUserProfile(userId, true);
 
-            verify(userAchievementRepository).findByUserId(userId);
-            verify(userAchievementRepository, never()).findByUserIdAndIsVisibleTrue(any());
+            verify(userAchievementRepository).findByUserIdOrderByUnlockedAtDesc(userId);
+            verify(userAchievementRepository, never()).findByUserIdAndIsVisibleTrueOrderByUnlockedAtDesc(any());
         }
 
         @Test
@@ -517,7 +517,7 @@ class UserServiceTest {
             when(completedReadingRepository.countByUserId(userId)).thenReturn(0L);
             when(quizAttemptRepository.countByUserId(userId)).thenReturn(0L);
             when(quizAttemptRepository.getAverageAccuracyByUserId(userId)).thenReturn(null);
-            when(userAchievementRepository.findByUserIdAndIsVisibleTrue(userId)).thenReturn(List.of());
+            when(userAchievementRepository.findByUserIdAndIsVisibleTrueOrderByUnlockedAtDesc(userId)).thenReturn(List.of());
             when(clanMemberRepository.findByUserId(userId)).thenReturn(List.of());
 
             UserProfileDTO profile = userService.getUserProfile(userId, false);
@@ -541,7 +541,7 @@ class UserServiceTest {
             when(completedReadingRepository.countByUserId(userId)).thenReturn(0L);
             when(quizAttemptRepository.countByUserId(userId)).thenReturn(0L);
             when(quizAttemptRepository.getAverageAccuracyByUserId(userId)).thenReturn(null);
-            when(userAchievementRepository.findByUserIdAndIsVisibleTrue(userId)).thenReturn(List.of());
+            when(userAchievementRepository.findByUserIdAndIsVisibleTrueOrderByUnlockedAtDesc(userId)).thenReturn(List.of());
             when(clanMemberRepository.findByUserId(userId)).thenReturn(List.of());
 
             UserProfileDTO profile = userService.getUserProfile(userId, false);
