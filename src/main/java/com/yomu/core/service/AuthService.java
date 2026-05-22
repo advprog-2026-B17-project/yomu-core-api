@@ -22,15 +22,18 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final GoogleTokenValidator googleTokenValidator;
+    private final EventPublisher eventPublisher;
 
     public AuthService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        JwtTokenProvider jwtTokenProvider,
-                       GoogleTokenValidator googleTokenValidator) {
+                       GoogleTokenValidator googleTokenValidator,
+                       EventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.googleTokenValidator = googleTokenValidator;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -56,6 +59,8 @@ public class AuthService {
         user.setRole("student");
 
         user = userRepository.save(user);
+
+        eventPublisher.publishUserCreated(user.getId(), user.getUsername(), user.getDisplayName(), user.getRole());
 
         String token = jwtTokenProvider.generateToken(
                 user.getId().toString(),
@@ -104,7 +109,9 @@ public class AuthService {
                     newUser.setGoogleId(request.getGoogleId());
                     newUser.setPasswordHash(passwordEncoder.encode(java.util.UUID.randomUUID().toString())); // Random password
                     newUser.setRole("student");
-                    return userRepository.save(newUser);
+                    User savedUser = userRepository.save(newUser);
+                    eventPublisher.publishUserCreated(savedUser.getId(), savedUser.getUsername(), savedUser.getDisplayName(), savedUser.getRole());
+                    return savedUser;
                 });
 
         // Update googleId if not set

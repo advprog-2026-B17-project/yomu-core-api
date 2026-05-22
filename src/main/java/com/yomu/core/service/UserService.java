@@ -19,30 +19,21 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final CompletedReadingRepository completedReadingRepository;
     private final QuizAttemptRepository quizAttemptRepository;
-    private final UserAchievementRepository userAchievementRepository;
-    private final AchievementRepository achievementRepository;
-    private final ClanMemberRepository clanMemberRepository;
-    private final ClanRepository clanRepository;
     private final UserDeletionService userDeletionService;
+    private final EventPublisher eventPublisher;
 
     public UserService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
                        CompletedReadingRepository completedReadingRepository,
                        QuizAttemptRepository quizAttemptRepository,
-                       UserAchievementRepository userAchievementRepository,
-                       AchievementRepository achievementRepository,
-                       ClanMemberRepository clanMemberRepository,
-                       ClanRepository clanRepository,
-                       UserDeletionService userDeletionService) {
+                       UserDeletionService userDeletionService,
+                       EventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.completedReadingRepository = completedReadingRepository;
         this.quizAttemptRepository = quizAttemptRepository;
-        this.userAchievementRepository = userAchievementRepository;
-        this.achievementRepository = achievementRepository;
-        this.clanMemberRepository = clanMemberRepository;
-        this.clanRepository = clanRepository;
         this.userDeletionService = userDeletionService;
+        this.eventPublisher = eventPublisher;
     }
 
     public Optional<User> findById(UUID id) {
@@ -94,6 +85,7 @@ public class UserService {
                     }
 
                     User updated = userRepository.save(user);
+                    eventPublisher.publishUserUpdated(updated.getId(), updated.getUsername(), updated.getDisplayName(), updated.getRole());
                     return toDTO(updated);
                 });
     }
@@ -109,7 +101,7 @@ public class UserService {
                 .orElse(false);
     }
 
-    public UserProfileDTO getUserProfile(UUID userId, boolean includeHiddenAchievements) {
+    public UserProfileDTO getUserProfile(UUID userId) {
         // Get user info
         Optional<User> userOpt = userRepository.findById(userId);
         Map<String, Object> userMap = userOpt.map(u -> Map.<String, Object>of(
@@ -126,48 +118,8 @@ public class UserService {
         Double accuracy = quizAttemptRepository.getAverageAccuracyByUserId(userId);
         StatsDTO stats = new StatsDTO(readings, quizzes, accuracy != null ? accuracy : 0.0);
 
-        List<UserAchievement> uaList = includeHiddenAchievements
-                ? userAchievementRepository.findByUserIdOrderByUnlockedAtDesc(userId)
-                : userAchievementRepository.findByUserIdAndIsVisibleTrueOrderByUnlockedAtDesc(userId);
-        Map<UUID, Achievement> achievementsById = achievementRepository.findAllById(
-                uaList.stream().map(UserAchievement::getAchievementId).toList()
-        ).stream().collect(Collectors.toMap(Achievement::getId, achievement -> achievement));
-        List<ProfileAchievementDTO> achievements = uaList.stream()
-                .map(ua -> toProfileAchievementDTO(ua, achievementsById.get(ua.getAchievementId())))
-                .filter(Objects::nonNull)
-                .toList();
-
-        List<ClanMember> memberships = clanMemberRepository.findByUserId(userId);
-        Map<String, Object> clan = null;
-        if (!memberships.isEmpty()) {
-            UUID clanId = memberships.get(0).getClanId();
-            Optional<Clan> clanOpt = clanRepository.findById(clanId);
-            clan = clanOpt.map(c -> Map.<String, Object>of(
-                "id", c.getId().toString(),
-                "name", c.getName(),
-                "tier", c.getTier(),
-                "role", memberships.get(0).getRole()
-            )).orElse(null);
-        }
-
-        return new UserProfileDTO(userMap, stats, achievements, clan);
-    }
-
-    private ProfileAchievementDTO toProfileAchievementDTO(UserAchievement userAchievement, Achievement achievement) {
-        if (achievement == null) {
-            return null;
-        }
-
-        return new ProfileAchievementDTO(
-                achievement.getId(),
-                achievement.getName(),
-                achievement.getDescription(),
-                achievement.getMilestone(),
-                achievement.getAchievementType().getValue(),
-                achievement.getIconUrl(),
-                userAchievement.getUnlockedAt(),
-                Boolean.TRUE.equals(userAchievement.getIsVisible())
-        );
+        // Achievements and clan are gamification concerns - handled by yomu-gamification-api via events
+        return new UserProfileDTO(userMap, stats);
     }
 
     private UserDTO toDTO(User user) {

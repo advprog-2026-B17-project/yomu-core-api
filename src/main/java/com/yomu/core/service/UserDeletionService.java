@@ -9,37 +9,14 @@ import java.util.UUID;
 @Service
 public class UserDeletionService {
 
-    private final UserAchievementRepository userAchievementRepository;
-    private final ClanMemberRepository clanMemberRepository;
-    private final ClanRepository clanRepository;
+    private final EventPublisher eventPublisher;
 
-    public UserDeletionService(UserAchievementRepository userAchievementRepository,
-                               ClanMemberRepository clanMemberRepository,
-                               ClanRepository clanRepository) {
-        this.userAchievementRepository = userAchievementRepository;
-        this.clanMemberRepository = clanMemberRepository;
-        this.clanRepository = clanRepository;
+    public UserDeletionService(EventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
     public void cascadeDelete(UUID userId) {
-        deleteAchievements(userId);
-        deleteClanMembership(userId);
-    }
-
-    private void deleteAchievements(UUID userId) {
-        userAchievementRepository.deleteAll(userAchievementRepository.findByUserId(userId));
-    }
-
-    private void deleteClanMembership(UUID userId) {
-        clanMemberRepository.findByUserId(userId).forEach(member -> {
-            clanMemberRepository.delete(member);
-            clanRepository.findById(member.getClanId()).ifPresent(clan -> {
-                if (userId.equals(clan.getLeaderId())) {
-                    clanMemberRepository.findByClanId(clan.getId()).forEach(clanMemberRepository::delete);
-                    clanRepository.delete(clan);
-                }
-            });
-        });
+        eventPublisher.publishUserDeleted(userId);
     }
 }

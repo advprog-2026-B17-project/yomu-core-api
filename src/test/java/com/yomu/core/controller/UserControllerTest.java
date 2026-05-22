@@ -1,7 +1,6 @@
 package com.yomu.core.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yomu.core.dto.ProfileAchievementDTO;
 import com.yomu.core.dto.UpdateUserRequest;
 import com.yomu.core.dto.UserDTO;
 import com.yomu.core.dto.UserProfileDTO;
@@ -114,12 +113,10 @@ class UserControllerTest {
         void returns200ForOwnProfile() throws Exception {
             UserProfileDTO profile = new UserProfileDTO(
                     Map.of("username", "alice", "displayName", "Alice"),
-                    new StatsDTO(10, 5, 85.0),
-                    List.of(),
-                    null
+                    new StatsDTO(10, 5, 85.0)
             );
 
-            when(userService.getUserProfile(eq(userId), eq(true))).thenReturn(profile);
+            when(userService.getUserProfile(userId)).thenReturn(profile);
 
             mockMvc.perform(get(USERS_BASE + "/" + userId + "/profile")
                             .with(userAuth(userId, "STUDENT")))
@@ -129,24 +126,14 @@ class UserControllerTest {
         }
 
         @Test
-        @DisplayName("returns 200 with visible achievements only for other user")
-        void returnsOnlyVisibleAchievementsForOtherUser() throws Exception {
+        @DisplayName("returns 200 with profile for other user")
+        void returns200ForOtherUser() throws Exception {
             UserProfileDTO profile = new UserProfileDTO(
                     Map.of("username", "bob", "displayName", "Bob"),
-                    new StatsDTO(5, 2, 70.0),
-                    List.of(new ProfileAchievementDTO(
-                            UUID.randomUUID(),
-                            "First Read",
-                            null,
-                            null,
-                            null,
-                            null,
-                            null,
-                            true)),
-                    null
+                    new StatsDTO(5, 2, 70.0)
             );
 
-            when(userService.getUserProfile(eq(otherUserId), eq(false))).thenReturn(profile);
+            when(userService.getUserProfile(otherUserId)).thenReturn(profile);
 
             mockMvc.perform(get(USERS_BASE + "/" + otherUserId + "/profile")
                             .with(userAuth(userId, "STUDENT")))

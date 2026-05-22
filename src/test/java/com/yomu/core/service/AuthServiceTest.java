@@ -36,6 +36,9 @@ class AuthServiceTest {
     @Mock
     private GoogleTokenValidator googleTokenValidator;
 
+    @Mock
+    private EventPublisher eventPublisher;
+
     private JwtTokenProvider jwtTokenProvider;
     private AuthService authService;
 
@@ -51,7 +54,8 @@ class AuthServiceTest {
                 userRepository,
                 passwordEncoder,
                 jwtTokenProvider,
-                googleTokenValidator
+                googleTokenValidator,
+                eventPublisher
         );
     }
 
